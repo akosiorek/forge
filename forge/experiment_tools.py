@@ -3,6 +3,7 @@
 import imp
 import importlib
 import os
+import os.path as osp
 import sys
 import re
 import shutil
@@ -11,6 +12,7 @@ import subprocess
 
 import numpy as np
 import tensorflow as tf
+from tensorflow.python import debug as tf_debug
 
 sys.path.append('../')
 from forge import tf_flags
@@ -28,6 +30,45 @@ def json_store(path, data):
 def json_load(path):
     with open(path, 'r') as f:
         return json.load(f)
+
+
+def load_from_checkpoint(checkpoint_dir, checkpoint_iter, path_prefix=''):
+    """Loads model and data from a specified checkpoint.
+
+    An example would be:
+    >>> dir = '../checkpoints/vae/1'
+    >>> iter = int(1e5)
+    >>> data, model, restore = load_from_checkpoint(dir, iter)
+    >>> sess = tf.Session()
+    >>> model.load(sess) # a this point model parameters are restored
+
+    :param checkpoint_dir: Checkpoint directory containing model checkpoints and the flags.json file.
+    :param checkpoint_iter: int, global-step of the checkpoint to be loaded.
+    :param path_prefix: string; path to be appended to config paths in case they were saved as non-absolute paths.
+    :return: (data, model), where data and model are loaded from their corresponding config files.
+        The model has a `load` function, which takes a tf.Session as an argument and restores model parameters.
+    """
+    flags = json_load(osp.join(checkpoint_dir, 'flags.json'))
+    _restore_flags(flags)
+    F = tf_flags.FLAGS
+
+    # Load data and model and figure out which trainable variables should be loaded with the model.
+    all_train_vars_before = set(tf.trainable_variables())
+    data = load(path_prefix + F.data_config, F.batch_size)
+    model = load(path_prefix + F.model_config, **data)
+    all_train_vars_after = set(tf.trainable_variables())
+    model_vars = list(all_train_vars_after - all_train_vars_before)
+
+    checkpoint_path = osp.join(checkpoint_dir, 'model.ckpt-{}'.format(checkpoint_iter))
+
+    def restore_func(sess):
+        sess.run(tf.global_variables_initializer())
+        saver = tf.train.Saver(model_vars)
+        saver.restore(sess, checkpoint_path)
+
+    model.load = restore_func
+
+    return data, model
 
 
 def init_checkpoint(checkpoint_dir, data_config, model_config, resume):
@@ -49,6 +90,9 @@ def init_checkpoint(checkpoint_dir, data_config, model_config, resume):
     :return:
     """
 
+    # Make sure these are absolute paths as otherwise model loading becomes tricky.
+    data_config, model_config = (osp.abspath(i) for i in (data_config, model_config))
+
     # check if the experiment folder exists and create if not
     checkpoint_dir_exists = os.path.exists(checkpoint_dir)
     if not checkpoint_dir_exists:
@@ -67,7 +111,8 @@ def init_checkpoint(checkpoint_dir, data_config, model_config, resume):
             experiment_folder += 1
     else:
         if resume:
-            raise ValueError("Can't resume since no experiments were run before in checkpoint dir '{}'.".format(checkpoint_dir))
+            raise ValueError("Can't resume since no experiments were run before in checkpoint"
+                             " dir '{}'.".format(checkpoint_dir))
         else:
             experiment_folder = 1
 
@@ -310,10 +355,15 @@ def print_variables_by_scope():
     print
 
 
-def get_session():
+def get_session(tfdbg=False):
     config = tf.ConfigProto()
     config.gpu_options.allow_growth = True
     sess = tf.Session(config=config)
+
+    if tfdbg:
+        sess = tf_debug.LocalCLIDebugWrapperSession(sess)
+        sess.add_tensor_filter("has_inf_or_nan", tf_debug.has_inf_or_nan)
+
     return sess
 
 

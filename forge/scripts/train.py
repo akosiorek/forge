@@ -3,8 +3,7 @@ from os import path as osp
 
 import tensorflow as tf
 
-from forge.experiment_tools import (load, init_checkpoint, parse_flags, get_session, print_flags,
-                                    print_num_params, print_variables_by_scope, set_gpu)
+import forge.experiment_tools as fet
 from forge import flags as flags
 
 # job config
@@ -29,23 +28,23 @@ flags.DEFINE_string('gpu', '0', 'Id of the gpu to use for this job.')
 F = flags.FLAGS
 
 # sets visible gpus to F.gpu
-set_gpu(F.gpu)
+fet.set_gpu(F.gpu)
 
 # Parse flags
-parse_flags()
+fet.parse_flags()
 config = flags.FLAGS
 
 # Prepare enviornment
 logdir = osp.join(config.results_dir, config.run_name)
-logdir, flags, resume_checkpoint = init_checkpoint(logdir, config.data_config, config.model_config, config.resume)
+logdir, flags, resume_checkpoint = fet.init_checkpoint(logdir, config.data_config, config.model_config, config.resume)
 checkpoint_name = osp.join(logdir, 'model.ckpt')
 
 # Build the graph
 tf.reset_default_graph()
 # load data
-data_dict = load(config.data_config, config)
+data_dict = fet.load(config.data_config, config)
 # load the model
-loss, stats, _ = load(config.model_config, config, **data_dict)
+loss, stats, _ = fet.load(config.model_config, config, **data_dict)
 
 # Add summaries for reported stats
 # summaries can be set up int he model config file
@@ -53,9 +52,9 @@ for k, v in stats.iteritems():
     tf.summary.scalar(k, v)
 
 # Print model stats
-print_flags()
-print_variables_by_scope()
-print_num_params()
+fet.print_flags()
+fet.print_variables_by_scope()
+fet.print_num_params()
 
 # Setup the optimizer
 global_step = tf.train.get_or_create_global_step()
@@ -67,7 +66,7 @@ with tf.control_dependencies(update_ops):
     train_step = opt.minimize(loss, global_step=global_step)
 
 # create session and initializer variables
-sess = get_session()
+sess = fet.get_session()
 sess.run(tf.global_variables_initializer())
 
 # Try to restore the model from a checkpoint

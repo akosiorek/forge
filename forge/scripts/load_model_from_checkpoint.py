@@ -15,3 +15,5 @@ restore_func(sess)
 print 'Loaded artefacts:'
 for k, v in artefacts.iteritems():
     print k, v
+
+# Model is now loaded and ready to use.

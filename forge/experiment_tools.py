@@ -1,5 +1,28 @@
-"""Tools used by the experiment script.
-"""
+########################################################################################
+# 
+# Forge
+# Copyright (C) 2018  Adam R. Kosiorek, Oxford Robotics Institute and
+#     Department of Statistics, University of Oxford
+#
+# email:   adamk@robots.ox.ac.uk
+# webpage: http://akosiorek.github.io/
+# github: https://github.com/akosiorek/forge/
+# 
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <http://www.gnu.org/licenses/>.
+# 
+########################################################################################
+
+"""Tools used by the experiment script."""
 import imp
 import importlib
 import os
@@ -14,12 +37,9 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.python import debug as tf_debug
 
-sys.path.append('../')
-from forge import tf_flags
+from forge import flags as _flags
 
 FLAG_FILE = 'flags.json'
-
-# TODO: docs
 
 
 def json_store(path, data):
@@ -40,54 +60,57 @@ def load_from_checkpoint(checkpoint_dir, checkpoint_iter, path_prefix=''):
     >>> iter = int(1e5)
     >>> data, model, restore = load_from_checkpoint(dir, iter)
     >>> sess = tf.Session()
-    >>> model.load(sess) # a this point model parameters are restored
+    >>> restore(sess) # a this point model parameters are restored
 
     :param checkpoint_dir: Checkpoint directory containing model checkpoints and the flags.json file.
     :param checkpoint_iter: int, global-step of the checkpoint to be loaded.
     :param path_prefix: string; path to be appended to config paths in case they were saved as non-absolute paths.
-    :return: (data, model), where data and model are loaded from their corresponding config files.
-        The model has a `load` function, which takes a tf.Session as an argument and restores model parameters.
+    :return: (data, model, restore_func), where data and model are loaded from their corresponding config files.
+        Calling `restore_func(sess)`, which takes a tf.Session as an argument, restores model parameters.
     """
-    flags = json_load(osp.join(checkpoint_dir, 'flags.json'))
+    flags = json_load(osp.join(checkpoint_dir, FLAG_FILE))
     _restore_flags(flags)
-    F = tf_flags.FLAGS
+    F = _flags.FLAGS
 
     # Load data and model and figure out which trainable variables should be loaded with the model.
     all_train_vars_before = set(tf.trainable_variables())
-    data = load(path_prefix + F.data_config, F.batch_size)
-    model = load(path_prefix + F.model_config, **data)
+    data = load(path_prefix + F.data_config, F)
+    model = load(path_prefix + F.model_config, F, **data)
     all_train_vars_after = set(tf.trainable_variables())
     model_vars = list(all_train_vars_after - all_train_vars_before)
 
     checkpoint_path = osp.join(checkpoint_dir, 'model.ckpt-{}'.format(checkpoint_iter))
 
     def restore_func(sess):
+        print 'Restoring model from "{}"'.format(checkpoint_path)
         sess.run(tf.global_variables_initializer())
         saver = tf.train.Saver(model_vars)
         saver.restore(sess, checkpoint_path)
 
-    model.load = restore_func
-
-    return data, model
+    return data, model, restore_func
 
 
 def init_checkpoint(checkpoint_dir, data_config, model_config, resume):
-    """
-    1) try mk checkpoint_dir
-    2) if continue:
-        a) check if checkpoint_dir/n where n is an integer and raise if it doesnt
-        b) load flags
-        c) load checkpoint
+    """Initializes model checkpoint.
 
-    3) if not:
-        a) n=n+1, mkdir
-        b) store flags
-        c) copy data & model configs
+    This function ensures that the `checkpoint_dir` exists and assigns a folder
+    under `checkpoint_dir` to this particular job. Job folders' names are integer values
+    starting at 0.
 
-    :param checkpoint_dir:
-    :param data_config:
-    :param model_config:
-    :return:
+    If `resume` is True, the folder for this job is set to the highest
+    already existing number and the checkpoint with the highest global_step value from that
+    folder is chosen to resume the model from. Additionally, config flags are loaded from this job folder.
+    If `resume` is False, a new job folder is created.
+
+    `data_config` and `model_config` are used to load and parse config flags that might be
+    defined in these config files. If
+
+    :param checkpoint_dir: path to a checkpoint dir.
+    :param data_config: path to a data config.
+    :param model_config: path to a model config.
+    :param resume: boolean; tries to resume the model from a checkpoint if True.
+    :return: path to the experiment folder, parsed config flags, path to model checkpoint that the model
+        should be resumed from or None.
     """
 
     # Make sure these are absolute paths as otherwise model loading becomes tricky.
@@ -104,9 +127,10 @@ def init_checkpoint(checkpoint_dir, data_config, model_config, resume):
     elif not os.path.isdir(checkpoint_dir):
         raise ValueError("Checkpoint dir '{}' is not a directory.".format(checkpoint_dir))
 
+    # find all job folders
     experiment_folders = [f for f in os.listdir(checkpoint_dir)
                           if not f.startswith('_') and not f.startswith('.')]
-    
+
     if experiment_folders:
         experiment_folder = int(sorted(experiment_folders, key=lambda x: int(x))[-1])
         if not resume:
@@ -125,10 +149,12 @@ def init_checkpoint(checkpoint_dir, data_config, model_config, resume):
     flag_path = os.path.join(experiment_folder, FLAG_FILE)
     resume_checkpoint = None
 
+    # parse flags from model/data config files
     _load_flags(model_config, data_config)
     flags = parse_flags()
     assert_all_flags_parsed()
 
+    # restore flags and find the latest model checkpoint
     if resume:
         restored_flags = json_load(flag_path)
         flags.update(restored_flags)
@@ -145,9 +171,10 @@ def init_checkpoint(checkpoint_dir, data_config, model_config, resume):
             # not in repo
             pass
 
+        # save config flags
         json_store(flag_path, flags)
 
-        # store configs
+        # copy model/data config to run folder
         for src in (model_config, data_config):
             file_name = os.path.basename(src)
             dst = os.path.join(experiment_folder, file_name)
@@ -161,6 +188,7 @@ def extract_itr_from_modelfile(model_path):
 
 
 def find_model_files(model_dir):
+    """Finds model checkpoints"""
     pattern = re.compile(r'.ckpt-[0-9]+$')
     model_files = [f.replace('.index', '') for f in os.listdir(model_dir)]
     model_files = [f for f in model_files if pattern.search(f)]
@@ -169,6 +197,7 @@ def find_model_files(model_dir):
 
 
 def load(conf_path, *args, **kwargs):
+    """Loads a config."""
 
     module, name = _import_module(conf_path)
     try:
@@ -178,10 +207,12 @@ def load(conf_path, *args, **kwargs):
                            "found in {}".format(module.__file__))
 
     print "Loading '{}' from {}".format(module.__name__, module.__file__)
+    parse_flags()
     return load_func(*args, **kwargs)
 
 
 def _import_module(module_path_or_name):
+    """Dynamically imports a module from a filepath or a module name."""
     module, name = None, None
 
     if module_path_or_name.endswith('.py'):
@@ -205,10 +236,9 @@ def _import_module(module_path_or_name):
 
 
 def _load_flags(*config_paths):
-    """Aggregates gflags from `config_path` into global flags
+    """Aggregates gflags from `config_path` into global flags.
 
-    :param config_paths:
-    :return:
+    :param config_paths: list of config paths
     """
     for config_path in config_paths:
         print 'loading flags from', config_path
@@ -216,7 +246,8 @@ def _load_flags(*config_paths):
 
 
 def parse_flags():
-    f = tf_flags.FLAGS
+    """Ensures that all flags are parsed."""
+    f = _flags.FLAGS
     args = sys.argv[1:]
 
     old_flags = f.__dict__['__flags'].copy()
@@ -230,12 +261,14 @@ def parse_flags():
 
 
 def _restore_flags(flags):
-    tf_flags.FLAGS.__dict__['__flags'] = flags
-    tf_flags.FLAGS.__dict__['__parsed'] = True
+    """Restores flags."""
+    _flags.FLAGS.__dict__['__flags'] = flags
+    _flags.FLAGS.__dict__['__parsed'] = True
 
 
 def print_flags():
-    flags = tf_flags.FLAGS.__flags
+    """Pretty-prints config flags."""
+    flags = _flags.FLAGS.__flags
 
     print 'Flags:'
     keys = sorted(flags.keys())
@@ -247,6 +280,7 @@ def print_flags():
 
 
 def set_flags(**flag_dict):
+    """Sets command-file flags."""
     for k, v in flag_dict.iteritems():
        sys.argv.append('--{}={}'.format(k, v))
 
@@ -262,6 +296,11 @@ def get_git_revision_hash():
 
 
 def set_flags_if_notebook(**flags_to_set):
+    """Sets flags ONLY IF executed in a jupyter notebook runtime.
+
+    This function is useful when loading a model or a dataset from a config inside a notebook,
+    or when some python script is called from a notebook.
+    """
     if is_notebook() and flags_to_set:
         print 'Setting the following flags:'
         keys = sorted(flags_to_set.keys())
@@ -275,6 +314,7 @@ def set_flags_if_notebook(**flags_to_set):
 
 
 def is_notebook():
+    """Determines whether the python is run under jupyter notebook."""
     notebook = False
     try:
         interpreter = get_ipython().__class__.__name__
@@ -287,29 +327,6 @@ def is_notebook():
         # get_ipython is undefined => no notebook
         pass
     return notebook
-
-
-def optimizer_from_string(opt_string, build=True):
-    import tensorflow as tf
-
-    res = re.search(r'([a-z|A-Z]+)\(?(.*)\)?$', opt_string).groups()
-    opt_name = res[0]
-
-    opt_args = ''
-    if len(res) > 1:
-        opt_args = res[1]
-
-    if opt_args.endswith(')'):
-        opt_args = opt_args[:-1]
-
-    opt_args = eval('dict({})'.format(opt_args))
-    opt = getattr(tf.train, '{}Optimizer'.format(opt_name))
-
-    if not build:
-        opt = opt, opt_args
-    else:
-        opt = opt(**opt_args)
-    return opt
 
 
 def format_integer(number, group_size=3):
@@ -358,6 +375,7 @@ def print_variables_by_scope():
 
 
 def get_session(tfdbg=False):
+    """Utility function for getting tf.Session."""
     config = tf.ConfigProto()
     config.gpu_options.allow_growth = True
     sess = tf.Session(config=config)
@@ -369,35 +387,5 @@ def get_session(tfdbg=False):
     return sess
 
 
-if __name__ == '__main__':
-
-    tf_flags.DEFINE_integer('int_flag', -2, 'some int')
-    tf_flags.DEFINE_string('string_flag', 'abc', 'some string')
-
-    checkpoint_dir = '../checkpoints/setup'
-    data_config = 'configs/static_mnist_data.py'
-    model_config = 'configs/imp_weighted_nvil.py'
-
-
-    # sys.argv.append('--int_flag=100')
-    # sys.argv.append('--model_flag=-1')
-    # print sys.argv
-
-    experiment_folder, loaded_flags, checkpoint_dir = init_checkpoint(checkpoint_dir, data_config, model_config, resume=False)
-
-    print experiment_folder
-    print loaded_flags
-    print checkpoint_dir
-    print sys.argv
-
-    print
-    print 'tf.flags:'
-    for k, v in tf_flags.FLAGS.__flags.iteritems():
-        print k, v
-    # batch_size = 64
-    # data_dict = load(data_config, batch_size)
-    # print data_dict.keys()
-    #
-    # model, train_step, global_step = load(model_config, img=data_dict.train_img, num=data_dict.train_num)
-    #
-    # print model
+def set_gpu(gpu_num):
+    os.environ['CUDA_VISIBLE_DEVICES'] = gpu_num

@@ -1,55 +1,73 @@
-"""Tools used for model evaluation.
-"""
+########################################################################################
+# 
+# Forge
+# Copyright (C) 2018  Adam R. Kosiorek, Oxford Robotics Institute and
+#     Department of Statistics, University of Oxford
+#
+# email:   adamk@robots.ox.ac.uk
+# webpage: http://akosiorek.github.io/
+# github: https://github.com/akosiorek/forge/
+# 
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <http://www.gnu.org/licenses/>.
+# 
+########################################################################################
+
+"""Tools used for model evaluation."""
 import collections
 import time
 
-import matplotlib
 import tensorflow as tf
 from tensorflow.python.util import nest
-
-matplotlib.use('Agg')
-from matplotlib.patches import Rectangle
-
-
-colours = """
-    #a6cee3
-    #1f78b4
-    #b2df8a
-    #33a02c
-    #fb9a99
-    #e31a1c
-    #fdbf6f
-    #ff7f00
-    #cab2d6
-    #6a3d9a
-    #ffff99
-    #b15928""".split()
-
-colours = [c.strip() for c in colours]
-colours = colours[1::2] + colours[::2]
-
-
-def rect(bbox, c=None, facecolor='none', label=None, ax=None, line_width=1):
-    r = Rectangle((bbox[1], bbox[0]), bbox[3], bbox[2], linewidth=line_width,
-                  edgecolor=c, facecolor=facecolor, label=label)
-
-    if ax is not None:
-        ax.add_patch(r)
-    return r
 
 
 def make_expr_logger(sess, num_batches, expr_dict, name, data_dict=None,
                      constants_dict=None, measure_time=True, writer=None):
-    """
+    """Creates a logging function which evaluates expressions in `expr_dict` when called.
 
-    :param sess:
-    :param writer:
-    :param num_batches:
-    :param expr:
-    :param name:
-    :param data_dict:
-    :param constants_dict:
-    :return:
+    The logger evaluates expressions from `expr_dict` and takes avereges over `num_batches`.
+    Expressions are evaluated as-is if `data_dict` is None. Otherwise, `data_dict` should contain
+    {target_tensor: source_tensor} pairs, where data from the source_tensor is passed as a
+    target_tensor into the graph with the feed dict mechanism.
+
+    Logs are written to standard output and stored as Tensorboard summaries if `writer` is not None.
+
+    An example:
+    >>> # assume `imgs`, `labels` are given and represent trainset tensors
+    >>> logits = create_model(imgs)
+    >>> acc = compute_accuraccy(logits, labels)
+    >>> expressions = {'accuracy': acc, 'mean_logit': tf.reduce_mean(logits)}
+    >>> # we would like to evaluate it on the training set
+    >>> data_dict = {imgs: test_imgs, labels: test_labels}  # test_imgs and test_lables are tensors
+    >>> # when run in a session, test_(imgs/labels) produce numpy.ndarrays
+    >>>
+    >>> logdir = '../checkpoints/run/1/'
+    >>> writer = tf.summary.filewriter(logdir)
+    >>> logger = make_expr_logger(sess, num_batches=10, expr_dict=expressions, data_dict=data_dict, writer=writer)
+    >>>
+    >>> # ... train the model
+    >>> logger(train_iter)  # evaluates expressions on 10 minibatches of test data and stores tensorboard logs
+    >>> # as well as prints the training iterations, values of the expressions and time taken to evalaute to
+    >>> # standard error
+
+    :param sess: tf.Session used to evaluate expressions and data tensors.
+    :param num_batches: Integer, number of minibatches to use for evaluation.
+    :param expr_dict: dict of {string: tf.Tensor}, expressions to be evaluated.
+    :param name: string, name appended to expressions' names.
+    :param data_dict: dict of {target_tensor: source_tensor} containing data feeds.
+    :param constants_dict: dict of {target_tensor: constant} that is added to the feed dict.
+    :param measure_time: boolean, if True, time taken to evaluate the expressions is reported.
+    :param writer: tf.FileWriter object. If present, logs are stored as Tensorboard summaries.
+    :return: callable, takes training iteration as input.
     """
 
     expr_dict = collections.OrderedDict(sorted(expr_dict.items()))
@@ -110,13 +128,11 @@ def make_expr_logger(sess, num_batches, expr_dict, name, data_dict=None,
 
 
 def log_ratio(var_tuple, name='ratio', eps=1e-8):
-    """
+    """Creates a scalar summary of the ratio of tensors in `var_tuple`.
 
-    :param var_tuple:
-    :param name:
-    :param which_name:
-    :param eps:
-    :return:
+    :param var_tuple: tuple of Tensors
+    :param name: string.
+    :param eps: float.
     """
     a, b = var_tuple
     ratio = tf.reduce_mean(abs(a) / (abs(b) + eps))
@@ -124,11 +140,10 @@ def log_ratio(var_tuple, name='ratio', eps=1e-8):
 
 
 def log_norm(expr_list, name):
-    """
+    """Creates a scalar summary of the norm of the list of tensors.
 
-    :param expr_list:
-    :param name:
-    :return:
+    :param expr_list: tensor or a list of Tensors.
+    :param name: string
     """
     n_elems = 0
     norm = 0.
@@ -141,6 +156,17 @@ def log_norm(expr_list, name):
 
 
 def log_values(writer, itr, tags=None, values=None, dict=None):
+    """Writes scalar summaries to Tensorboard.
+
+    Values can be passed as either a list of string tags and float values, or
+    as a dictionary. In the latter case, the keys are used as summary tags.
+
+    :param writer: tf.summary.Filewriter
+    :param itr: int, training iteration
+    :param tags: list of strings or None
+    :param values: list of floats or None
+    :param dict: dict of {string: float} or None
+    """
     if dict is not None:
         assert tags is None and values is None
         tags = dict.keys()

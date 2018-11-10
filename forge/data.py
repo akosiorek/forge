@@ -1,3 +1,27 @@
+########################################################################################
+# 
+# Forge
+# Copyright (C) 2018  Adam R. Kosiorek, Oxford Robotics Institute and
+#     Department of Statistics, University of Oxford
+#
+# email:   adamk@robots.ox.ac.uk
+# webpage: http://akosiorek.github.io/
+# github: https://github.com/akosiorek/forge/
+# 
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <http://www.gnu.org/licenses/>.
+# 
+########################################################################################
+
 import numpy as np
 import itertools
 
@@ -5,6 +29,18 @@ import tensorflow as tf
 
 
 def tensors_from_data(data_dict, batch_size, axes=None, shuffle=False):
+    """Turns a dict of numpy.ndarrays into a dict of minibatch tensors.
+
+    Arrays are split into minibatches of `batch_size` along `axes`. If `axes` is None,
+    then all arrays are split along axis==0. Tensors can iterate sequentially over the
+    passed arrays if shuffle=False or in a random order if shuffle=True.
+
+    :param data_dict: dict of {key: nump.ndarray}.
+    :param batch_size: integer
+    :param axes: dict of {k: integer} or None
+    :param shuffle: boolean.
+    :return: dict of {key: tf.Tensor}
+    """
     keys = data_dict.keys()
     if axes is None:
         axes = {k: 0 for k in keys}

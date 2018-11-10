@@ -104,7 +104,9 @@ def init_checkpoint(checkpoint_dir, data_config, model_config, resume):
     elif not os.path.isdir(checkpoint_dir):
         raise ValueError("Checkpoint dir '{}' is not a directory.".format(checkpoint_dir))
 
-    experiment_folders = [f for f in os.listdir(checkpoint_dir) if not f.startswith('_')]
+    experiment_folders = [f for f in os.listdir(checkpoint_dir)
+                          if not f.startswith('_') and not f.startswith('.')]
+    
     if experiment_folders:
         experiment_folder = int(sorted(experiment_folders, key=lambda x: int(x))[-1])
         if not resume:

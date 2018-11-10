@@ -1,7 +1,6 @@
 """Experiment script."""
 import os
 from os import path as osp
-import pdb
 
 import numpy as np
 import tensorflow as tf
@@ -27,7 +26,7 @@ flags.DEFINE_integer('report_loss_every', int(1e3), 'Number of iterations betwee
 flags.DEFINE_integer('save_itr', int(1e5), 'Number of iterations between snapshotting the model.')
 flags.DEFINE_integer('fig_itr', 10000, 'Number of iterations between creating results figures.')
 flags.DEFINE_integer('train_itr', int(2e6), 'Maximum number of training iterations.')
-flags.DEFINE_boolean('resume', False, 'Tries to resume the previous run if True.')
+
 flags.DEFINE_boolean('log_at_start', False, 'Evaluates the model between training commences if True.')
 flags.DEFINE_boolean('eval_on_train', True, 'Evaluates the model on the train set if True')
 
@@ -46,7 +45,6 @@ flags.DEFINE_boolean('debug', False, 'Adds a lot of tensorboard summaries if Tru
 F = flags.FLAGS
 os.environ['CUDA_VISIBLE_DEVICES'] = F.gpu
 
-# try:
 # Parse flags
 parse_flags()
 F = flags.FLAGS
@@ -139,7 +137,3 @@ while train_itr < F.train_itr:
 
 saver.save(sess, checkpoint_name, global_step=train_itr)
 # try_plot(train_itr)
-
-# except Exception as err:
-#     print err.message
-#     pdb.pm()

@@ -1,0 +1,16 @@
+{
+    "batch_size": 32, 
+    "data_config": "configs/mnist_data.py", 
+    "data_folder": "../data/MNIST_data", 
+    "git_commit": "2367149939ee5af98c7af11b28626d64a6589c6f", 
+    "gpu": "0", 
+    "learning_rate": 1e-05, 
+    "model_config": "configs/mnist_mlp.py", 
+    "n_hidden": 128, 
+    "report_loss_every": 1000, 
+    "results_dir": "../checkpoints", 
+    "resume": false, 
+    "run_name": "test_run", 
+    "save_itr": 10000, 
+    "train_itr": 2000000
+}

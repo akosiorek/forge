@@ -104,3 +104,4 @@ ENV/
 *.gz
 
 checkpoints
+data

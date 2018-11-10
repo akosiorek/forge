@@ -1,5 +1,4 @@
-"""Tools used by the experiment script.
-"""
+"""Tools used by the experiment script."""
 import imp
 import importlib
 import os
@@ -14,12 +13,9 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.python import debug as tf_debug
 
-sys.path.append('../')
-from forge import tf_flags
+from forge import flags as _flags
 
 FLAG_FILE = 'flags.json'
-
-# TODO: docs
 
 
 def json_store(path, data):
@@ -40,35 +36,34 @@ def load_from_checkpoint(checkpoint_dir, checkpoint_iter, path_prefix=''):
     >>> iter = int(1e5)
     >>> data, model, restore = load_from_checkpoint(dir, iter)
     >>> sess = tf.Session()
-    >>> model.load(sess) # a this point model parameters are restored
+    >>> restore(sess) # a this point model parameters are restored
 
     :param checkpoint_dir: Checkpoint directory containing model checkpoints and the flags.json file.
     :param checkpoint_iter: int, global-step of the checkpoint to be loaded.
     :param path_prefix: string; path to be appended to config paths in case they were saved as non-absolute paths.
-    :return: (data, model), where data and model are loaded from their corresponding config files.
-        The model has a `load` function, which takes a tf.Session as an argument and restores model parameters.
+    :return: (data, model, restore_func), where data and model are loaded from their corresponding config files.
+        Calling `restore_func(sess)`, which takes a tf.Session as an argument, restores model parameters.
     """
-    flags = json_load(osp.join(checkpoint_dir, 'flags.json'))
+    flags = json_load(osp.join(checkpoint_dir, FLAG_FILE))
     _restore_flags(flags)
-    F = tf_flags.FLAGS
+    F = _flags.FLAGS
 
     # Load data and model and figure out which trainable variables should be loaded with the model.
     all_train_vars_before = set(tf.trainable_variables())
-    data = load(path_prefix + F.data_config, F.batch_size)
-    model = load(path_prefix + F.model_config, **data)
+    data = load(path_prefix + F.data_config, F)
+    model = load(path_prefix + F.model_config, F, **data)
     all_train_vars_after = set(tf.trainable_variables())
     model_vars = list(all_train_vars_after - all_train_vars_before)
 
     checkpoint_path = osp.join(checkpoint_dir, 'model.ckpt-{}'.format(checkpoint_iter))
 
     def restore_func(sess):
+        print 'Restoring model from "{}"'.format(checkpoint_path)
         sess.run(tf.global_variables_initializer())
         saver = tf.train.Saver(model_vars)
         saver.restore(sess, checkpoint_path)
 
-    model.load = restore_func
-
-    return data, model
+    return data, model, restore_func
 
 
 def init_checkpoint(checkpoint_dir, data_config, model_config, resume):
@@ -106,7 +101,7 @@ def init_checkpoint(checkpoint_dir, data_config, model_config, resume):
 
     experiment_folders = [f for f in os.listdir(checkpoint_dir)
                           if not f.startswith('_') and not f.startswith('.')]
-    
+
     if experiment_folders:
         experiment_folder = int(sorted(experiment_folders, key=lambda x: int(x))[-1])
         if not resume:
@@ -216,7 +211,7 @@ def _load_flags(*config_paths):
 
 
 def parse_flags():
-    f = tf_flags.FLAGS
+    f = _flags.FLAGS
     args = sys.argv[1:]
 
     old_flags = f.__dict__['__flags'].copy()
@@ -230,12 +225,12 @@ def parse_flags():
 
 
 def _restore_flags(flags):
-    tf_flags.FLAGS.__dict__['__flags'] = flags
-    tf_flags.FLAGS.__dict__['__parsed'] = True
+    _flags.FLAGS.__dict__['__flags'] = flags
+    _flags.FLAGS.__dict__['__parsed'] = True
 
 
 def print_flags():
-    flags = tf_flags.FLAGS.__flags
+    flags = _flags.FLAGS.__flags
 
     print 'Flags:'
     keys = sorted(flags.keys())
@@ -287,29 +282,6 @@ def is_notebook():
         # get_ipython is undefined => no notebook
         pass
     return notebook
-
-
-def optimizer_from_string(opt_string, build=True):
-    import tensorflow as tf
-
-    res = re.search(r'([a-z|A-Z]+)\(?(.*)\)?$', opt_string).groups()
-    opt_name = res[0]
-
-    opt_args = ''
-    if len(res) > 1:
-        opt_args = res[1]
-
-    if opt_args.endswith(')'):
-        opt_args = opt_args[:-1]
-
-    opt_args = eval('dict({})'.format(opt_args))
-    opt = getattr(tf.train, '{}Optimizer'.format(opt_name))
-
-    if not build:
-        opt = opt, opt_args
-    else:
-        opt = opt(**opt_args)
-    return opt
 
 
 def format_integer(number, group_size=3):
@@ -369,35 +341,5 @@ def get_session(tfdbg=False):
     return sess
 
 
-if __name__ == '__main__':
-
-    tf_flags.DEFINE_integer('int_flag', -2, 'some int')
-    tf_flags.DEFINE_string('string_flag', 'abc', 'some string')
-
-    checkpoint_dir = '../checkpoints/setup'
-    data_config = 'configs/static_mnist_data.py'
-    model_config = 'configs/imp_weighted_nvil.py'
-
-
-    # sys.argv.append('--int_flag=100')
-    # sys.argv.append('--model_flag=-1')
-    # print sys.argv
-
-    experiment_folder, loaded_flags, checkpoint_dir = init_checkpoint(checkpoint_dir, data_config, model_config, resume=False)
-
-    print experiment_folder
-    print loaded_flags
-    print checkpoint_dir
-    print sys.argv
-
-    print
-    print 'tf.flags:'
-    for k, v in tf_flags.FLAGS.__flags.iteritems():
-        print k, v
-    # batch_size = 64
-    # data_dict = load(data_config, batch_size)
-    # print data_dict.keys()
-    #
-    # model, train_step, global_step = load(model_config, img=data_dict.train_img, num=data_dict.train_num)
-    #
-    # print model
+def set_gpu(gpu_num):
+    os.environ['CUDA_VISIBLE_DEVICES'] = gpu_num

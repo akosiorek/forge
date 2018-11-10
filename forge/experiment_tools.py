@@ -67,22 +67,26 @@ def load_from_checkpoint(checkpoint_dir, checkpoint_iter, path_prefix=''):
 
 
 def init_checkpoint(checkpoint_dir, data_config, model_config, resume):
-    """
-    1) try mk checkpoint_dir
-    2) if continue:
-        a) check if checkpoint_dir/n where n is an integer and raise if it doesnt
-        b) load flags
-        c) load checkpoint
+    """Initializes model checkpoint.
 
-    3) if not:
-        a) n=n+1, mkdir
-        b) store flags
-        c) copy data & model configs
+    This function ensures that the `checkpoint_dir` exists and assigns a folder
+    under `checkpoint_dir` to this particular job. Job folders' names are integer values
+    starting at 0.
 
-    :param checkpoint_dir:
-    :param data_config:
-    :param model_config:
-    :return:
+    If `resume` is True, the folder for this job is set to the highest
+    already existing number and the checkpoint with the highest global_step value from that
+    folder is chosen to resume the model from. Additionally, config flags are loaded from this job folder.
+    If `resume` is False, a new job folder is created.
+
+    `data_config` and `model_config` are used to load and parse config flags that might be
+    defined in these config files. If
+
+    :param checkpoint_dir: path to a checkpoint dir.
+    :param data_config: path to a data config.
+    :param model_config: path to a model config.
+    :param resume: boolean; tries to resume the model from a checkpoint if True.
+    :return: path to the experiment folder, parsed config flags, path to model checkpoint that the model
+        should be resumed from or None.
     """
 
     # Make sure these are absolute paths as otherwise model loading becomes tricky.
@@ -99,6 +103,7 @@ def init_checkpoint(checkpoint_dir, data_config, model_config, resume):
     elif not os.path.isdir(checkpoint_dir):
         raise ValueError("Checkpoint dir '{}' is not a directory.".format(checkpoint_dir))
 
+    # find all job folders
     experiment_folders = [f for f in os.listdir(checkpoint_dir)
                           if not f.startswith('_') and not f.startswith('.')]
 
@@ -120,10 +125,12 @@ def init_checkpoint(checkpoint_dir, data_config, model_config, resume):
     flag_path = os.path.join(experiment_folder, FLAG_FILE)
     resume_checkpoint = None
 
+    # parse flags from model/data config files
     _load_flags(model_config, data_config)
     flags = parse_flags()
     assert_all_flags_parsed()
 
+    # restore flags and find the latest model checkpoint
     if resume:
         restored_flags = json_load(flag_path)
         flags.update(restored_flags)
@@ -140,9 +147,10 @@ def init_checkpoint(checkpoint_dir, data_config, model_config, resume):
             # not in repo
             pass
 
+        # save config flags
         json_store(flag_path, flags)
 
-        # store configs
+        # copy model/data config to run folder
         for src in (model_config, data_config):
             file_name = os.path.basename(src)
             dst = os.path.join(experiment_folder, file_name)
@@ -156,6 +164,7 @@ def extract_itr_from_modelfile(model_path):
 
 
 def find_model_files(model_dir):
+    """Finds model checkpoints"""
     pattern = re.compile(r'.ckpt-[0-9]+$')
     model_files = [f.replace('.index', '') for f in os.listdir(model_dir)]
     model_files = [f for f in model_files if pattern.search(f)]
@@ -164,6 +173,7 @@ def find_model_files(model_dir):
 
 
 def load(conf_path, *args, **kwargs):
+    """Loads a config."""
 
     module, name = _import_module(conf_path)
     try:
@@ -177,6 +187,7 @@ def load(conf_path, *args, **kwargs):
 
 
 def _import_module(module_path_or_name):
+    """Dynamically imports a module from a filepath or a module name."""
     module, name = None, None
 
     if module_path_or_name.endswith('.py'):
@@ -200,10 +211,9 @@ def _import_module(module_path_or_name):
 
 
 def _load_flags(*config_paths):
-    """Aggregates gflags from `config_path` into global flags
+    """Aggregates gflags from `config_path` into global flags.
 
-    :param config_paths:
-    :return:
+    :param config_paths: list of config paths
     """
     for config_path in config_paths:
         print 'loading flags from', config_path
@@ -211,6 +221,7 @@ def _load_flags(*config_paths):
 
 
 def parse_flags():
+    """Ensures that all flags are parsed."""
     f = _flags.FLAGS
     args = sys.argv[1:]
 
@@ -225,11 +236,13 @@ def parse_flags():
 
 
 def _restore_flags(flags):
+    """Restores flags."""
     _flags.FLAGS.__dict__['__flags'] = flags
     _flags.FLAGS.__dict__['__parsed'] = True
 
 
 def print_flags():
+    """Pretty-prints config flags."""
     flags = _flags.FLAGS.__flags
 
     print 'Flags:'
@@ -242,6 +255,7 @@ def print_flags():
 
 
 def set_flags(**flag_dict):
+    """Sets command-file flags."""
     for k, v in flag_dict.iteritems():
        sys.argv.append('--{}={}'.format(k, v))
 
@@ -257,6 +271,11 @@ def get_git_revision_hash():
 
 
 def set_flags_if_notebook(**flags_to_set):
+    """Sets flags ONLY IF executed in a jupyter notebook runtime.
+
+    This function is useful when loading a model or a dataset from a config inside a notebook,
+    or when some python script is called from a notebook.
+    """
     if is_notebook() and flags_to_set:
         print 'Setting the following flags:'
         keys = sorted(flags_to_set.keys())
@@ -270,6 +289,7 @@ def set_flags_if_notebook(**flags_to_set):
 
 
 def is_notebook():
+    """Determines whether the python is run under jupyter notebook."""
     notebook = False
     try:
         interpreter = get_ipython().__class__.__name__
@@ -330,6 +350,7 @@ def print_variables_by_scope():
 
 
 def get_session(tfdbg=False):
+    """Utility function for getting tf.Session."""
     config = tf.ConfigProto()
     config.gpu_options.allow_growth = True
     sess = tf.Session(config=config)

@@ -183,6 +183,7 @@ def load(conf_path, *args, **kwargs):
                            "found in {}".format(module.__file__))
 
     print "Loading '{}' from {}".format(module.__name__, module.__file__)
+    parse_flags()
     return load_func(*args, **kwargs)
 
 

@@ -74,6 +74,8 @@ def load_from_checkpoint(checkpoint_dir, checkpoint_iter, path_prefix=''):
 
     # Load data and model and figure out which trainable variables should be loaded with the model.
     all_train_vars_before = set(tf.trainable_variables())
+    # TODO(akosiorek): this should use config files stored in the job folder, not the ones
+    # that the config file is pointing to.
     data = load(path_prefix + F.data_config, F)
     model = load(path_prefix + F.model_config, F, **data)
     all_train_vars_after = set(tf.trainable_variables())
@@ -150,11 +152,13 @@ def init_checkpoint(checkpoint_dir, data_config, model_config, resume):
     resume_checkpoint = None
 
     # parse flags from model/data config files
+    # TODO(akosiorek): is there a way to remove `_load_flags` call here?
     _load_flags(model_config, data_config)
     flags = parse_flags()
     assert_all_flags_parsed()
 
     # restore flags and find the latest model checkpoint
+    # TODO(akosiorek): this should use `load_from_checkpoint` function
     if resume:
         restored_flags = json_load(flag_path)
         flags.update(restored_flags)
@@ -350,6 +354,8 @@ def print_num_params():
 
 
 def print_variables_by_scope():
+    """Prints trainable variable by scope."""
+    # TODO(akosiorek): there seems to be an issue with the last scope: last variable is omitted and printed separately.
     vars = [(v.name, v.shape.as_list()) for v in tf.trainable_variables()]
     vars = sorted(vars, key=lambda x: x[0])
 

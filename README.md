@@ -19,5 +19,8 @@ Both config files and any scripts use `forge.flags` for configuration. They are 
 ## Model Checkpoints
 The training script relies on `checkpoint_dir` and `run_name` flags, that specify where model checkpoints should be kept. For every run, a job-specific folder is created under `checkpoint_dir/run_name/#`, where `#` is a number. All config flags and dataset/model config are stored in a job folder, so that the corresponding job can be easily resumed later by passing the `resume` flag. It is also easy to load a model checkpoint in [another script](https://github.com/akosiorek/forge/blob/161cbaaafe99df7064dd447a1dcd307ee0c4c4e2/forge/examples/load_model_from_checkpoint.py) or a [jupyter notebook](https://github.com/akosiorek/forge/blob/161cbaaafe99df7064dd447a1dcd307ee0c4c4e2/forge/examples/model_in_notebook.ipynb).
 
+## Contributing
+Features requests and contributions in the form of a pull request are welcome.
+
 ##### Copyright
 Adam R. Kosiorek

@@ -21,14 +21,14 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 # 
 ########################################################################################
-
 """Experiment training script."""
 from os import path as osp
 
 import tensorflow as tf
 
+import forge
+from forge import flags
 import forge.experiment_tools as fet
-from forge import flags as flags
 
 # job config
 flags.DEFINE_string('data_config', 'configs/mnist_data.py', 'Path to a data config file.')
@@ -49,18 +49,15 @@ flags.DEFINE_float('learning_rate', 1e-5, 'Initial values of the learning rate')
 # gpu
 flags.DEFINE_string('gpu', '0', 'Id of the gpu to use for this job.')
 
-F = flags.FLAGS
-
-# sets visible gpus to F.gpu
-fet.set_gpu(F.gpu)
-
 # Parse flags
-fet.parse_flags()
-config = flags.FLAGS
+config = forge.config()
+
+# sets visible gpus to config.gpu
+fet.set_gpu(config.gpu)
 
 # Prepare enviornment
 logdir = osp.join(config.results_dir, config.run_name)
-logdir, flags, resume_checkpoint = fet.init_checkpoint(logdir, config.data_config, config.model_config, config.resume)
+logdir, resume_checkpoint = fet.init_checkpoint(logdir, config.data_config, config.model_config, config.resume)
 checkpoint_name = osp.join(logdir, 'model.ckpt')
 
 # Build the graph
@@ -71,7 +68,7 @@ data_dict = fet.load(config.data_config, config)
 loss, stats, _ = fet.load(config.model_config, config, **data_dict)
 
 # Add summaries for reported stats
-# summaries can be set up int he model config file
+# summaries can be set up in the model config file
 for k, v in stats.iteritems():
     tf.summary.scalar(k, v)
 
@@ -110,14 +107,14 @@ while train_itr < config.train_itr:
     l, train_itr, _ = sess.run([stats, global_step, train_step])
 
     # tensorboard summaries and heartbeat logs
-    if train_itr % F.report_loss_every == 0:
+    if train_itr % config.report_loss_every == 0:
         print '{}: {}'.format(train_itr, str(l)[1:-1].replace('\'=', ''))
 
         if all_summaries is not None:
             summaries = sess.run(all_summaries)
             summary_writer.add_summary(summaries, train_itr)
 
-    if train_itr % F.save_itr == 0:
+    if train_itr % config.save_itr == 0:
         saver.save(sess, checkpoint_name, global_step=train_itr)
 
 saver.save(sess, checkpoint_name, global_step=train_itr)

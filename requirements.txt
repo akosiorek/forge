@@ -1,0 +1,4 @@
+dm_sonnet
+tensorflow
+numpy
+attrdict

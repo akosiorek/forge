@@ -184,7 +184,7 @@ def init_checkpoint(checkpoint_dir, data_config, model_config, resume):
             dst = os.path.join(experiment_folder, file_name)
             shutil.copy(src, dst)
 
-    return experiment_folder, flags, resume_checkpoint
+    return experiment_folder, resume_checkpoint
 
 
 def extract_itr_from_modelfile(model_path):
@@ -261,7 +261,7 @@ def parse_flags():
     sys.argv[1:] = flags_passthrough
     f.__dict__['__flags'].update(old_flags)
 
-    return f.__flags # pylint: disable=protected-access
+    return f.__flags  # pylint: disable=protected-access
 
 
 def _restore_flags(flags):

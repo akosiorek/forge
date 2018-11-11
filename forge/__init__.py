@@ -28,4 +28,6 @@ from data import tensors_from_data
 
 def config():
     import flags
+    from experiment_tools import parse_flags
+    parse_flags()
     return flags.FLAGS

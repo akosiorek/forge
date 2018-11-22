@@ -1,4 +1,6 @@
-dm_sonnet
 tensorflow
 numpy
 attrdict
+dm_sonnet (for running the examples)
+tensorflow-probability (required by dm_sonnet)
+wrapt (required by dm_sonnet)

@@ -40,7 +40,7 @@ flags.DEFINE_boolean('resume', False, 'Tries to resume a job if True.')
 # logging config
 flags.DEFINE_integer('report_loss_every', int(1e3), 'Number of iterations between reporting minibatch loss - hearbeat.')
 flags.DEFINE_integer('save_itr', int(1e4), 'Number of iterations between snapshotting the model.')
-flags.DEFINE_integer('train_itr', int(2e6), 'Maximum number of training iterations.')
+flags.DEFINE_integer('train_itr', int(1e5), 'Maximum number of training iterations.')
 
 # experiment config
 flags.DEFINE_integer('batch_size', 32, '')

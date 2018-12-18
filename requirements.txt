@@ -1,3 +1,5 @@
 tensorflow
+torch
+torchvision
 numpy
 attrdict

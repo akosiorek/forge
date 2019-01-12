@@ -1,6 +1,7 @@
 import functools
 import sys
 import traceback
+import pdb
 
 
 def debug_on(*exceptions):
@@ -20,6 +21,7 @@ def debug_on(*exceptions):
                 last_traceback = sys.exc_info()[2]
                 traceback.print_tb(last_traceback)
                 print err
+                pdb.post_mortem(last_traceback)
 
         return wrapper
 

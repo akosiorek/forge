@@ -115,8 +115,8 @@ def init_checkpoint(checkpoint_dir, data_config, model_config, resume):
         should be resumed from or None.
     """
 
-    # Make sure these are absolute paths as otherwise model loading becomes tricky.
-    data_config, model_config = (osp.abspath(i) for i in (data_config, model_config))
+    # # Make sure these are absolute paths as otherwise model loading becomes tricky.
+    # data_config, model_config = (osp.abspath(i) for i in (data_config, model_config))
 
     # check if the experiment folder exists and create if not
     checkpoint_dir_exists = os.path.exists(checkpoint_dir)
@@ -354,8 +354,7 @@ def print_num_params():
 
 
 def print_variables_by_scope():
-    """Prints trainable variable by scope."""
-    # TODO(akosiorek): there seems to be an issue with the last scope: last variable is omitted and printed separately.
+    """Prints trainable variables by scope."""
     vars = [(v.name, v.shape.as_list()) for v in tf.trainable_variables()]
     vars = sorted(vars, key=lambda x: x[0])
 
@@ -364,10 +363,10 @@ def print_variables_by_scope():
     for i, (name, shape) in enumerate(vars):
 
         current_scope = name.split('/', 1)[0]
-        if current_scope != last_scope or i == len(vars) - 1:
+        if current_scope != last_scope:
             if last_scope is not None:
                 scope_n_params = format_integer(scope_n_params)
-                print '{} scope params = {}'.format(last_scope, scope_n_params)
+                print '\t#  scope params = {}'.format(scope_n_params)
                 print
 
             print 'scope:', current_scope
@@ -377,6 +376,8 @@ def print_variables_by_scope():
         n_params = np.prod(shape, dtype=np.int32)
         scope_n_params += n_params
         print '\t', name, shape
+
+    print '\t#  scope params = {}'.format(format_integer(scope_n_params))
     print
 
 

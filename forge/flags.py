@@ -71,6 +71,13 @@ def _define_helper(flag_name, default_value, docstring, flagtype):
 FLAGS = _FlagValues()
 
 
+def reset():
+    global _global_parser
+    global FLAGS
+    _global_parser = _argparse.ArgumentParser()
+    FLAGS = _FlagValues()
+
+
 def DEFINE_string(flag_name, default_value, docstring):
     """Defines a flag of type 'string'.
     Args:

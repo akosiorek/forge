@@ -147,5 +147,6 @@ _allowed_symbols = [
     'DEFINE_integer',
     'DEFINE_string',
     'FLAGS',
+    'reset',
 ]
 remove_undocumented(__name__, _allowed_symbols)

@@ -53,7 +53,8 @@ def json_load(path):
 
 
 def load_from_checkpoint(checkpoint_dir, checkpoint_iter, path_prefix='',
-                         model_kwargs=None, data_kwargs=None, override_flags=None):
+                         model_kwargs=None, data_kwargs=None, override_flags=None,
+                         use_stored_configs=True):
     """Loads model and data from a specified checkpoint.
 
     An example would be:
@@ -69,10 +70,28 @@ def load_from_checkpoint(checkpoint_dir, checkpoint_iter, path_prefix='',
     :param model_kwargs: dict of kwargs passed to the model loading in addition to data.
     :param data_kwargs: dict of kwargs passed to data loading.
     :param override_flags: dict of kwargs used to override values restored from the flag file.
+    :param use_stored_configs: If True, it uses model/data config files stored with the model checkpoint; otherwise
+        it loads configs from their original location (which can be different from the ones used for training the model).
     :return: (data, model, restore_func), where data and model are loaded from their corresponding config files.
         Calling `restore_func(sess)`, which takes a tf.Session as an argument, restores model parameters.
     """
     flags = json_load(osp.join(checkpoint_dir, FLAG_FILE))
+    # replace model and data config in the flag file with the ones
+    # stored with the checkpoint, if they exist
+
+    if use_stored_configs:
+        def maybe_replace(key):
+            if key not in flags:
+                return
+
+            filename = os.path.basename(flags[key])
+            filename = os.path.join(checkpoint_dir, filename)
+            if os.path.exists(filename):
+                flags[key] = filename
+
+        maybe_replace('model_config')
+        maybe_replace('data_config')
+
     if override_flags is not None:
         flags.update(override_flags)
 
@@ -310,6 +329,18 @@ def assert_all_flags_parsed():
 
 def get_git_revision_hash():
     return subprocess.check_output(['git', 'rev-parse', 'HEAD']).strip()
+
+
+def git_checkout(hash):
+    return subprocess.check_output(['git', 'checkout', hash]).strip()
+
+
+def git_stash():
+    return subprocess.check_output(['git', 'stash']).strip()
+
+
+def git_unstash():
+    return subprocess.check_output(['git', 'stash', 'apply']).strip()
 
 
 def set_flags_if_notebook(**flags_to_set):

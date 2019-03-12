@@ -2,3 +2,4 @@ dm_sonnet
 tensorflow
 numpy
 attrdict
+simplejson

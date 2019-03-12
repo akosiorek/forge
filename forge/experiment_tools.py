@@ -31,7 +31,7 @@ import os.path as osp
 import sys
 import re
 import shutil
-import json
+import simplejson as json
 import subprocess
 
 import numpy as np

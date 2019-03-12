@@ -23,6 +23,7 @@
 ########################################################################################
 
 """Tools used by the experiment script."""
+from __future__ import print_function
 import imp
 import importlib
 import os
@@ -97,7 +98,7 @@ def load_from_checkpoint(checkpoint_dir, checkpoint_iter, path_prefix='',
     checkpoint_path = osp.join(checkpoint_dir, 'model.ckpt-{}'.format(checkpoint_iter))
 
     def restore_func(sess):
-        print 'Restoring model from "{}"'.format(checkpoint_path)
+        print('Restoring model from "{}"'.format(checkpoint_path))
         sess.run(tf.global_variables_initializer())
         saver = tf.train.Saver(model_vars)
         saver.restore(sess, checkpoint_path)
@@ -223,7 +224,7 @@ def load(conf_path, *args, **kwargs):
         raise ValueError("The config file should specify 'load' function but no such function was "
                            "found in {}".format(module.__file__))
 
-    print "Loading '{}' from {}".format(module.__name__, module.__file__)
+    print("Loading '{}' from {}".format(module.__name__, module.__file__))
     parse_flags()
     return load_func(*args, **kwargs)
 
@@ -258,7 +259,7 @@ def _load_flags(*config_paths):
     :param config_paths: list of config paths
     """
     for config_path in config_paths:
-        print 'loading flags from', config_path
+        print('loading flags from', config_path)
         _import_module(config_path)
 
 
@@ -287,12 +288,12 @@ def print_flags():
     """Pretty-prints config flags."""
     flags = _flags.FLAGS.__flags
 
-    print 'Flags:'
+    print('Flags:')
     keys = sorted(flags.keys())
-    print '=' * 60
+    print('=' * 60)
     for k in keys:
-        print '\t{}: {}'.format(k, flags[k])
-    print '=' * 60
+        print('\t{}: {}'.format(k, flags[k]))
+    print('=' * 60)
     print
 
 
@@ -319,13 +320,13 @@ def set_flags_if_notebook(**flags_to_set):
     or when some python script is called from a notebook.
     """
     if is_notebook() and flags_to_set:
-        print 'Setting the following flags:'
+        print('Setting the following flags:')
         keys = sorted(flags_to_set.keys())
         for k in keys[:-1]:
-            print ' --{}={}\\'.format(k, flags_to_set[k])
+            print(' --{}={}\\'.format(k, flags_to_set[k]))
 
         k = keys[-1]
-        print ' --{}={}'.format(k, flags_to_set[k])
+        print(' --{}={}'.format(k, flags_to_set[k]))
 
         set_flags(**flags_to_set)
 
@@ -363,7 +364,7 @@ def format_integer(number, group_size=3):
 def print_num_params():
     num_params = sum([np.prod(v.shape.as_list(), dtype=int) for v in tf.trainable_variables()])
     num_params = format_integer(num_params)
-    print 'Number of trainable parameters: {}'.format(num_params)
+    print('Number of trainable parameters: {}'.format(num_params))
 
 
 def print_variables_by_scope():
@@ -379,18 +380,18 @@ def print_variables_by_scope():
         if current_scope != last_scope:
             if last_scope is not None:
                 scope_n_params = format_integer(scope_n_params)
-                print '\t#  scope params = {}'.format(scope_n_params)
+                print('\t#  scope params = {}'.format(scope_n_params))
                 print
 
-            print 'scope:', current_scope
+            print('scope:', current_scope)
             scope_n_params = 0
 
         last_scope = current_scope
         n_params = np.prod(shape, dtype=np.int32)
         scope_n_params += n_params
-        print '\t', name, shape
+        print('\t', name, shape)
 
-    print '\t#  scope params = {}'.format(format_integer(scope_n_params))
+    print('\t#  scope params = {}'.format(format_integer(scope_n_params)))
     print
 
 

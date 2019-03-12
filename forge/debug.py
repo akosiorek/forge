@@ -1,3 +1,4 @@
+from __future__ import print_function
 import functools
 import sys
 import traceback
@@ -20,7 +21,7 @@ def debug_on(*exceptions):
             except exceptions as err:
                 last_traceback = sys.exc_info()[2]
                 traceback.print_tb(last_traceback)
-                print err
+                print(err)
                 pdb.post_mortem(last_traceback)
 
         return wrapper

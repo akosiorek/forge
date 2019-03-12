@@ -51,7 +51,7 @@ def tensors_from_data(data_dict, batch_size, axes=None, shuffle=False):
 
     if shuffle:
         def idx_fun():
-            return np.random.choice(n_entries, batch_size)
+            return np.random.choice(n_entries, batch_size, replace=False)
 
     else:
         rolling_idx = itertools.cycle(xrange(0, n_entries - batch_size + 1, batch_size))
@@ -77,5 +77,5 @@ def tensors_from_data(data_dict, batch_size, axes=None, shuffle=False):
     for t, m in zip(tensors, minibatch):
         t.set_shape(m.shape)
 
-    tensors = {k: v for k, v in zip(keys, tensors)}
+    tensors = data_dict.__class__({k: v for k, v in zip(keys, tensors)})
     return tensors

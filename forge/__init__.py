@@ -24,6 +24,7 @@
 
 from experiment_tools import load_from_checkpoint, load
 from data import tensors_from_data
+from debug import debug_on
 
 
 def config():

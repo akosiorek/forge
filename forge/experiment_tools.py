@@ -52,7 +52,8 @@ def json_load(path):
         return json.load(f)
 
 
-def load_from_checkpoint(checkpoint_dir, checkpoint_iter, path_prefix=''):
+def load_from_checkpoint(checkpoint_dir, checkpoint_iter, path_prefix='',
+                         model_kwargs=None, data_kwargs=None, override_flags=None):
     """Loads model and data from a specified checkpoint.
 
     An example would be:
@@ -65,10 +66,16 @@ def load_from_checkpoint(checkpoint_dir, checkpoint_iter, path_prefix=''):
     :param checkpoint_dir: Checkpoint directory containing model checkpoints and the flags.json file.
     :param checkpoint_iter: int, global-step of the checkpoint to be loaded.
     :param path_prefix: string; path to be appended to config paths in case they were saved as non-absolute paths.
+    :param model_kwargs: dict of kwargs passed to the model loading in addition to data.
+    :param data_kwargs: dict of kwargs passed to data loading.
+    :param override_flags: dict of kwargs used to override values restored from the flag file.
     :return: (data, model, restore_func), where data and model are loaded from their corresponding config files.
         Calling `restore_func(sess)`, which takes a tf.Session as an argument, restores model parameters.
     """
     flags = json_load(osp.join(checkpoint_dir, FLAG_FILE))
+    if override_flags is not None:
+        flags.update(override_flags)
+
     _restore_flags(flags)
     F = _flags.FLAGS
 
@@ -76,7 +83,13 @@ def load_from_checkpoint(checkpoint_dir, checkpoint_iter, path_prefix=''):
     all_train_vars_before = set(tf.trainable_variables())
     # TODO(akosiorek): this should use config files stored in the job folder, not the ones
     # that the config file is pointing to.
-    data = load(path_prefix + F.data_config, F)
+
+    data_kwargs = data_kwargs if data_kwargs is not None else {}
+    data = load(path_prefix + F.data_config, F, **data_kwargs)
+
+    if model_kwargs is not None:
+        data.update(model_kwargs)
+
     model = load(path_prefix + F.model_config, F, **data)
     all_train_vars_after = set(tf.trainable_variables())
     model_vars = list(all_train_vars_after - all_train_vars_before)
@@ -115,8 +128,8 @@ def init_checkpoint(checkpoint_dir, data_config, model_config, resume):
         should be resumed from or None.
     """
 
-    # Make sure these are absolute paths as otherwise model loading becomes tricky.
-    data_config, model_config = (osp.abspath(i) for i in (data_config, model_config))
+    # # Make sure these are absolute paths as otherwise model loading becomes tricky.
+    # data_config, model_config = (osp.abspath(i) for i in (data_config, model_config))
 
     # check if the experiment folder exists and create if not
     checkpoint_dir_exists = os.path.exists(checkpoint_dir)
@@ -354,8 +367,7 @@ def print_num_params():
 
 
 def print_variables_by_scope():
-    """Prints trainable variable by scope."""
-    # TODO(akosiorek): there seems to be an issue with the last scope: last variable is omitted and printed separately.
+    """Prints trainable variables by scope."""
     vars = [(v.name, v.shape.as_list()) for v in tf.trainable_variables()]
     vars = sorted(vars, key=lambda x: x[0])
 
@@ -364,10 +376,10 @@ def print_variables_by_scope():
     for i, (name, shape) in enumerate(vars):
 
         current_scope = name.split('/', 1)[0]
-        if current_scope != last_scope or i == len(vars) - 1:
+        if current_scope != last_scope:
             if last_scope is not None:
                 scope_n_params = format_integer(scope_n_params)
-                print '{} scope params = {}'.format(last_scope, scope_n_params)
+                print '\t#  scope params = {}'.format(scope_n_params)
                 print
 
             print 'scope:', current_scope
@@ -377,6 +389,8 @@ def print_variables_by_scope():
         n_params = np.prod(shape, dtype=np.int32)
         scope_n_params += n_params
         print '\t', name, shape
+
+    print '\t#  scope params = {}'.format(format_integer(scope_n_params))
     print
 
 

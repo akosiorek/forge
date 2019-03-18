@@ -3,3 +3,4 @@ tensorflow
 numpy
 attrdict
 simplejson
+future

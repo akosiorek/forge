@@ -22,6 +22,8 @@
 # 
 ########################################################################################
 
+from builtins import range
+
 import numpy as np
 import itertools
 
@@ -41,7 +43,7 @@ def tensors_from_data(data_dict, batch_size, axes=None, shuffle=False):
     :param shuffle: boolean.
     :return: dict of {key: tf.Tensor}
     """
-    keys = data_dict.keys()
+    keys = list(data_dict.keys())
     if axes is None:
         axes = {k: 0 for k in keys}
 
@@ -54,7 +56,7 @@ def tensors_from_data(data_dict, batch_size, axes=None, shuffle=False):
             return np.random.choice(n_entries, batch_size, replace=False)
 
     else:
-        rolling_idx = itertools.cycle(xrange(0, n_entries - batch_size + 1, batch_size))
+        rolling_idx = itertools.cycle(range(0, n_entries - batch_size + 1, batch_size))
 
         def idx_fun():
             start = next(rolling_idx)

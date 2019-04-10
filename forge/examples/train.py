@@ -22,6 +22,7 @@
 # 
 ########################################################################################
 """Experiment training script."""
+from __future__ import print_function
 from os import path as osp
 
 import tensorflow as tf
@@ -31,9 +32,9 @@ from forge import flags
 import forge.experiment_tools as fet
 
 # job config
-flags.DEFINE_string('data_config', 'configs/mnist_data.py', 'Path to a data config file.')
-flags.DEFINE_string('model_config', 'configs/mnist_mlp.py', 'Path to a model config file.')
-flags.DEFINE_string('results_dir', '../checkpoints', 'Top directory for all experimental results.')
+flags.DEFINE_string('data_config', 'forge/configs/mnist_data.py', 'Path to a data config file.')
+flags.DEFINE_string('model_config', 'forge/configs/mnist_mlp.py', 'Path to a model config file.')
+flags.DEFINE_string('results_dir', 'checkpoints', 'Top directory for all experimental results.')
 flags.DEFINE_string('run_name', 'test_run', 'Name of this job. Results will be stored in a corresponding folder.')
 flags.DEFINE_boolean('resume', False, 'Tries to resume a job if True.')
 
@@ -69,7 +70,7 @@ loss, stats, _ = fet.load(config.model_config, config, **data_dict)
 
 # Add summaries for reported stats
 # summaries can be set up in the model config file
-for k, v in stats.iteritems():
+for (k, v) in stats.items():
     tf.summary.scalar(k, v)
 
 # Print model stats
@@ -93,14 +94,14 @@ sess.run(tf.global_variables_initializer())
 # Try to restore the model from a checkpoint
 saver = tf.train.Saver(max_to_keep=10000)
 if resume_checkpoint is not None:
-    print "Restoring checkpoint from '{}'".format(resume_checkpoint)
+    print("Restoring checkpoint from '{}'".format(resume_checkpoint))
     saver.restore(sess, resume_checkpoint)
 
 summary_writer = tf.summary.FileWriter(logdir, sess.graph)
 all_summaries = tf.summary.merge_all()
 
 train_itr = sess.run(global_step)
-print 'Starting training at iter = {}'.format(train_itr)
+print('Starting training at iter = {}'.format(train_itr))
 
 # Train!
 while train_itr < config.train_itr:
@@ -108,7 +109,7 @@ while train_itr < config.train_itr:
 
     # tensorboard summaries and heartbeat logs
     if train_itr % config.report_loss_every == 0:
-        print '{}: {}'.format(train_itr, str(l)[1:-1].replace('\'=', ''))
+        print('{}: {}'.format(train_itr, str(l)[1:-1].replace('\'=', '')))
 
         if all_summaries is not None:
             summaries = sess.run(all_summaries)

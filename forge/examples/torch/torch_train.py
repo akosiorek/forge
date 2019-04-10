@@ -75,8 +75,9 @@ fet.print_flags()
 print(model)
 
 # Setup optimizer
-optimizer = optim.SGD(model.parameters(),
-                      lr=config.learning_rate, momentum=0.9)
+optimizer = optim.RMSprop(model.parameters(),
+                          lr=config.learning_rate,
+                          momentum=0.9)
 
 # Try to restore model and optimizer from checkpoint
 if resume_checkpoint is not None:

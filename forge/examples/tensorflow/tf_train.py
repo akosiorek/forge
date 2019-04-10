@@ -23,11 +23,7 @@
 ########################################################################################
 
 """Experiment training script."""
-<<<<<<< HEAD:forge/examples/train.py
 from __future__ import print_function
-=======
-
->>>>>>> pytorch_example:forge/examples/tensorflow/tf_train.py
 from os import path as osp
 
 import tensorflow as tf
@@ -36,19 +32,11 @@ import forge
 from forge import flags
 import forge.experiment_tools as fet
 
-<<<<<<< HEAD:forge/examples/train.py
-# job config
-flags.DEFINE_string('data_config', 'forge/configs/mnist_data.py', 'Path to a data config file.')
-flags.DEFINE_string('model_config', 'forge/configs/mnist_mlp.py', 'Path to a model config file.')
-flags.DEFINE_string('results_dir', 'checkpoints', 'Top directory for all experimental results.')
-flags.DEFINE_string('run_name', 'test_run', 'Name of this job. Results will be stored in a corresponding folder.')
-=======
 # Job config
 flags.DEFINE_string('data_config', 'configs/tf_mnist_data.py', 'Path to a data config file.')
 flags.DEFINE_string('model_config', 'configs/tf_mnist_mlp.py', 'Path to a model config file.')
 flags.DEFINE_string('results_dir', 'checkpoints', 'Top directory for all experimental results.')
 flags.DEFINE_string('run_name', 'mnist', 'Name of this job. Results will be stored in a corresponding folder.')
->>>>>>> pytorch_example:forge/examples/tensorflow/tf_train.py
 flags.DEFINE_boolean('resume', False, 'Tries to resume a job if True.')
 
 # Logging config

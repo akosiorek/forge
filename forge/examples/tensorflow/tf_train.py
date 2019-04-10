@@ -31,6 +31,7 @@ import tensorflow as tf
 import forge
 from forge import flags
 import forge.experiment_tools as fet
+import forge.tf_tools as tf_tools
 
 # Job config
 flags.DEFINE_string('data_config', 'configs/tf_mnist_data.py', 'Path to a data config file.')
@@ -76,8 +77,8 @@ for (k, v) in stats.items():
 
 # Print model stats
 fet.print_flags()
-fet.print_variables_by_scope()
-fet.print_num_params()
+tf_tools.print_variables_by_scope()
+tf_tools.print_num_params()
 
 # Setup the optimizer
 global_step = tf.train.get_or_create_global_step()
@@ -89,7 +90,7 @@ with tf.control_dependencies(update_ops):
     train_step = opt.minimize(loss, global_step=global_step)
 
 # Create session and initializer variables
-sess = fet.get_session()
+sess = tf_tools.get_session()
 sess.run(tf.global_variables_initializer())
 
 # Try to restore the model from a checkpoint

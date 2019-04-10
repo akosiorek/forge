@@ -1,6 +1,8 @@
 """An old implementation of tensorflow flags.
 
 The experiment framework relies on the internals of this implementation, hence it is included in the project.
+
+Modified by Martin Engelcke, April 10th 2019
 """
 # Copyright 2015 The TensorFlow Authors. All Rights Reserved.
 #
@@ -21,8 +23,6 @@ from __future__ import division
 from __future__ import print_function
 
 import argparse as _argparse
-
-from tensorflow.python.util.all_util import remove_undocumented
 
 _global_parser = _argparse.ArgumentParser()
 
@@ -130,15 +130,3 @@ def DEFINE_float(flag_name, default_value, docstring):
       docstring: A helpful message explaining the use of the flag.
     """
     _define_helper(flag_name, default_value, docstring, float)
-
-
-_allowed_symbols = [
-    # We rely on gflags documentation.
-    'DEFINE_bool',
-    'DEFINE_boolean',
-    'DEFINE_float',
-    'DEFINE_integer',
-    'DEFINE_string',
-    'FLAGS',
-]
-remove_undocumented(__name__, _allowed_symbols)

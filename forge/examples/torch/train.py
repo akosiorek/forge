@@ -36,9 +36,9 @@ import forge.experiment_tools as fet
 
 
 # Job config
-flags.DEFINE_string('data_config', 'configs/torch_mnist_data.py',
+flags.DEFINE_string('data_config', 'configs/mnist_data.py',
                     'Path to a data config file.')
-flags.DEFINE_string('model_config', 'configs/torch_mnist_mlp.py',
+flags.DEFINE_string('model_config', 'configs/mnist_mlp.py',
                     'Path to a model config file.')
 flags.DEFINE_string('results_dir', 'checkpoints',
                     'Top directory for all experimental results.')

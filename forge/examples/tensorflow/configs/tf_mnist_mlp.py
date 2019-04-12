@@ -23,20 +23,21 @@
 ########################################################################################
 
 """Simple MLP model config for MNIST classification."""
-import sonnet as snt
 import tensorflow as tf
 
 from forge import flags
 
-flags.DEFINE_integer('n_hidden', 128, 'Number of hidden units.')
+flags.DEFINE_integer('n_hidden', 32, 'Number of hidden units.')
 
 
 def load(config, **inputs):
 
     imgs, labels = inputs['train_img'], inputs['train_label']
 
-    imgs = snt.BatchFlatten()(imgs)
-    mlp = snt.nets.MLP([config.n_hidden, 10])
+    mlp = tf.keras.models.Sequential([
+        tf.keras.layers.Dense(config.n_hidden, activation=tf.nn.relu),
+        tf.keras.layers.Dense(10)
+    ])
     logits = mlp(imgs)
     labels = tf.cast(labels, tf.int32)
 

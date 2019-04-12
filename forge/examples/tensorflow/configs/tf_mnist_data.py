@@ -31,7 +31,7 @@ from forge import flags
 from forge.data import tensors_from_data
 
 
-flags.DEFINE_string('data_folder', '../data/MNIST_data', 'Path to a data folder.')
+flags.DEFINE_string('data_folder', 'data/MNIST_data', 'Path to a data folder.')
 
 
 # This function should return a dataset in a form that is accepted by the

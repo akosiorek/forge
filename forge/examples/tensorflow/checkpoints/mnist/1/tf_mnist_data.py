@@ -31,9 +31,12 @@ from forge import flags
 from forge.data import tensors_from_data
 
 
-flags.DEFINE_string('data_folder', '../data/MNIST_data', 'Path to a data folder.')
+flags.DEFINE_string('data_folder', 'data/MNIST_data', 'Path to a data folder.')
 
 
+# This function should return a dataset in a form that is accepted by the
+# corresponding model file.
+# In this case, it returns a dictionary of tensors.
 def load(config, **unused_kwargs):
 
     del unused_kwargs
@@ -46,6 +49,7 @@ def load(config, **unused_kwargs):
     train_data = {'imgs': dataset.train.images, 'labels': dataset.train.labels}
     valid_data = {'imgs': dataset.validation.images, 'labels': dataset.validation.labels}
 
+    # This function turns a dictionary of numpy.ndarrays into tensors.
     train_tensors = tensors_from_data(train_data, config.batch_size, shuffle=True)
     valid_tensors = tensors_from_data(valid_data, config.batch_size, shuffle=False)
 

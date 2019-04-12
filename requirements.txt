@@ -1,5 +1,7 @@
 dm_sonnet
 tensorflow
+torch
+torchvision
 numpy
 attrdict
 simplejson

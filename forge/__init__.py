@@ -22,12 +22,13 @@
 # 
 ########################################################################################
 
-from experiment_tools import load_from_checkpoint, load
-from data import tensors_from_data
+from forge.experiment_tools import load_from_checkpoint, load
+from forge.data import tensors_from_data
+from forge.debug import debug_on
 
 
 def config():
-    import flags
-    from experiment_tools import parse_flags
+    import forge.flags
+    from forge.experiment_tools import parse_flags
     parse_flags()
     return flags.FLAGS

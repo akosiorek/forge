@@ -201,7 +201,7 @@ def init_checkpoint(checkpoint_dir, data_config, model_config, resume):
 
         # write uncommited changes to text file
         git_diff_file = os.path.join(experiment_folder, GIT_DIFF_FILE)
-        os.system('git diff > '+git_diff_file)
+        os.system('git diff > ' + git_diff_file)
 
     return experiment_folder, resume_checkpoint
 

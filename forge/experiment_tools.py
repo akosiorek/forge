@@ -39,6 +39,9 @@ import numpy as np
 from forge import flags as _flags
 
 FLAG_FILE = 'flags.json'
+GIT_DIFF_FILE = 'git_diff.txt'
+FPRINT_FILE = 'fprint.txt'
+EXPERIMENT_FOLDER = None
 
 
 def json_store(path, data):
@@ -142,6 +145,14 @@ def init_checkpoint(checkpoint_dir, data_config, model_config, resume):
             file_name = os.path.basename(src)
             dst = os.path.join(experiment_folder, file_name)
             shutil.copy(src, dst)
+
+        # write uncommited changes to text file
+        git_diff_file = os.path.join(experiment_folder, GIT_DIFF_FILE)
+        os.system('git diff > ' + git_diff_file)
+
+    # TODO(martin): Is there a way to avoid this global variable?
+    global EXPERIMENT_FOLDER
+    EXPERIMENT_FOLDER = experiment_folder
 
     return experiment_folder, resume_checkpoint
 
@@ -308,3 +319,14 @@ def format_integer(number, group_size=3):
 
 def set_gpu(gpu_num):
     os.environ['CUDA_VISIBLE_DEVICES'] = gpu_num
+
+
+def fprint(text):
+    """Print text to screen and write to FPRINT_FILE."""
+    # Redirect stdout to file
+    original = sys.stdout
+    sys.stdout = open(os.path.join(EXPERIMENT_FOLDER, FPRINT_FILE), 'a+')
+    print(text)
+    # Set stdout back to original
+    sys.stdout = original
+    print(text)

@@ -427,8 +427,9 @@ def fprint(text):
     """Print text to screen and write to FPRINT_FILE."""
     # Redirect stdout to file
     original = sys.stdout
-    sys.stdout = open(os.path.join(EXPERIMENT_FOLDER, FPRINT_FILE), 'a+')
-    print(text)
-    # Set stdout back to original
-    sys.stdout = original
+    if EXPERIMENT_FOLDER is not None:
+        sys.stdout = open(os.path.join(EXPERIMENT_FOLDER, FPRINT_FILE), 'a+')
+        print(text)
+        # Set stdout back to original
+        sys.stdout = original
     print(text)

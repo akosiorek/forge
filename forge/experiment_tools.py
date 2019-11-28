@@ -33,6 +33,7 @@ import re
 import shutil
 import simplejson as json
 import subprocess
+import datetime
 
 import numpy as np
 import tensorflow as tf
@@ -423,8 +424,12 @@ def set_gpu(gpu_num):
     os.environ['CUDA_VISIBLE_DEVICES'] = gpu_num
 
 
-def fprint(text):
+def fprint(text, timestamp=False):
     """Print text to screen and write to FPRINT_FILE."""
+    # Add timestamp if requested
+    if timestamp:
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        text = timestamp + ' ' + text
     # Redirect stdout to file
     original = sys.stdout
     if EXPERIMENT_FOLDER is not None:

@@ -58,7 +58,7 @@ def json_load(path):
 
 
 def load_from_checkpoint(checkpoint_dir, checkpoint_iter, path_prefix='',
-                         model_kwargs=None, data_kwargs=None, override_flags=None):
+                         model_kwargs=None, data_kwargs=None, override_flags=None, mode=None):
     """Loads model and data from a specified checkpoint.
 
     An example would be:
@@ -95,19 +95,35 @@ def load_from_checkpoint(checkpoint_dir, checkpoint_iter, path_prefix='',
     if model_kwargs is not None:
         data.update(model_kwargs)
 
-    model = load(path_prefix + F.model_config, F, **data)
-    all_train_vars_after = set(tf.trainable_variables())
-    model_vars = list(all_train_vars_after - all_train_vars_before)
-
     checkpoint_path = osp.join(checkpoint_dir, 'model.ckpt-{}'.format(checkpoint_iter))
+    model_config = path_prefix + F.model_config
 
-    def restore_func(sess):
-        print('Restoring model from "{}"'.format(checkpoint_path))
-        sess.run(tf.global_variables_initializer())
-        saver = tf.train.Saver(model_vars)
-        saver.restore(sess, checkpoint_path)
+    if mode is None:
+        checkpoint = checkpoint_path
+        model = load(model_config, F)
 
-    return data, model, restore_func
+    elif mode == 'tf':
+        model = load(model_config, F, **data)
+        all_train_vars_after = set(tf.trainable_variables())
+        model_vars = list(all_train_vars_after - all_train_vars_before)
+
+        def checkpoint(sess):
+            print('Restoring model from "{}"'.format(checkpoint_path))
+            sess.run(tf.global_variables_initializer())
+            saver = tf.train.Saver(model_vars)
+            saver.restore(sess, checkpoint_path)
+
+    elif mode == 'torch':
+        import torch
+
+        checkpoint = torch.load(checkpoint_path)
+        model = load(model_config, F)
+        model.load_state_dict(checkpoint['model_state_dict'])
+
+    else:
+        raise ValueError('Unkown mode: "{}".'.format(mode))
+
+    return data, model, checkpoint
 
 
 def init_checkpoint(checkpoint_dir, data_config, model_config, resume):
@@ -292,7 +308,7 @@ def parse_flags():
 
 def _restore_flags(flags):
     """Restores flags."""
-    _flags.FLAGS.__dict__['__flags'] = flags
+    _flags.FLAGS.__dict__['__flags'].update(flags)
     _flags.FLAGS.__dict__['__parsed'] = True
 
 

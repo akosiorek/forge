@@ -53,17 +53,32 @@ def tensors_from_data(data_dict, batch_size, axes=None, shuffle=False):
 
     if shuffle:
         def idx_fun():
+            """
+            Returns a random array of the indices.
+
+            Args:
+            """
             return np.random.choice(n_entries, batch_size, replace=False)
 
     else:
         rolling_idx = itertools.cycle(range(0, n_entries - batch_size + 1, batch_size))
 
         def idx_fun():
+            """
+            Return start index of the start index.
+
+            Args:
+            """
             start = next(rolling_idx)
             end = start + batch_size
             return np.arange(start, end)
 
     def data_fun():
+        """
+        Return a list of minibatch functions
+
+        Args:
+        """
         idx = idx_fun()
         minibatch = []
         for k in keys:

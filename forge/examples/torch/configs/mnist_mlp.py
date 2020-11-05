@@ -33,6 +33,12 @@ flags.DEFINE_integer('n_hidden', 128, 'Number of hidden units.')
 
 
 def load(config):
+    """
+    Load a fifarrays.
+
+    Args:
+        config: (dict): write your description
+    """
     mlp = nn.Sequential(
         nn.Linear(784, config.n_hidden),
         nn.ReLU(),

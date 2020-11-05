@@ -13,8 +13,19 @@ def debug_on(*exceptions):
         exceptions = (AssertionError,)
 
     def decorator(f):
+        """
+        Decorator to catch exceptions.
+
+        Args:
+            f: (array): write your description
+        """
         @functools.wraps(f)
         def wrapper(*args, **kwargs):
+            """
+            Wrap wrapper around the function.
+
+            Args:
+            """
             try:
                 return f(*args, **kwargs)
 

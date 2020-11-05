@@ -81,12 +81,36 @@ def make_expr_logger(sess, num_batches, expr_dict, name, data_dict=None,
         log_string += ', eval time = {:.4}s'
 
         def make_log_string(itr, l, t):
+            """
+            Make a string from a list of strings.
+
+            Args:
+                itr: (todo): write your description
+                l: (todo): write your description
+                t: (todo): write your description
+            """
             return log_string.format(itr, t, **l)
     else:
         def make_log_string(itr, l, t):
+            """
+            Make a string from a log string.
+
+            Args:
+                itr: (todo): write your description
+                l: (todo): write your description
+                t: (todo): write your description
+            """
             return log_string.format(itr, **l)
 
     def log(itr, l, t):
+        """
+        Log a message to log
+
+        Args:
+            itr: (todo): write your description
+            l: (dict): write your description
+            t: (todo): write your description
+        """
         try:
             return make_log_string(itr, l, t)
         except ValueError as err:
@@ -96,6 +120,16 @@ def make_expr_logger(sess, num_batches, expr_dict, name, data_dict=None,
                 print '{}: {}'.format(k, type(v))
 
     def logger(itr=0, num_batches_to_eval=None, write=True, writer=writer):
+        """
+        Log batches of num_batches.
+
+        Args:
+            itr: (todo): write your description
+            num_batches_to_eval: (int): write your description
+            write: (bool): write your description
+            writer: (bool): write your description
+            writer: (bool): write your description
+        """
         l = {k: 0. for k in expr_dict}
         start = time.time()
         if num_batches_to_eval is None:

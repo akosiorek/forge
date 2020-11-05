@@ -28,6 +28,11 @@ from forge.debug import debug_on
 
 
 def config():
+    """
+    Returns a list of config file.
+
+    Args:
+    """
     import forge.flags
     from forge.experiment_tools import parse_flags
     parse_flags()

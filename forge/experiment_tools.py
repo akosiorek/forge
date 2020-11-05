@@ -48,11 +48,24 @@ EXPERIMENT_FOLDER = None
 
 
 def json_store(path, data):
+    """
+    Store data to file.
+
+    Args:
+        path: (str): write your description
+        data: (array): write your description
+    """
     with open(path, 'w') as f:
         json.dump(data, f, sort_keys=True, indent=4)
 
 
 def json_load(path):
+    """
+    Loads a json file.
+
+    Args:
+        path: (str): write your description
+    """
     with open(path, 'r') as f:
         return json.load(f)
 
@@ -108,6 +121,12 @@ def load_from_checkpoint(checkpoint_dir, checkpoint_iter, path_prefix='',
         model_vars = list(all_train_vars_after - all_train_vars_before)
 
         def checkpoint(sess):
+            """
+            Restore the model.
+
+            Args:
+                sess: (todo): write your description
+            """
             print('Restoring model from "{}"'.format(checkpoint_path))
             sess.run(tf.global_variables_initializer())
             saver = tf.train.Saver(model_vars)
@@ -231,6 +250,12 @@ def init_checkpoint(checkpoint_dir, data_config, model_config, resume):
 
 
 def extract_itr_from_modelfile(model_path):
+    """
+    Extractsrr from a given model_path.
+
+    Args:
+        model_path: (str): write your description
+    """
     return int(model_path.split('-')[-1].split('.')[0])
 
 
@@ -333,12 +358,22 @@ def set_flags(**flag_dict):
 
 
 def assert_all_flags_parsed():
+    """
+    Assert that all flags are none.
+
+    Args:
+    """
     not_parsed = [a for a in sys.argv[1:] if a.startswith('--')]
     if not_parsed:
         raise RuntimeError('Failed to parse following flags: {}'.format(not_parsed))
 
 
 def get_git_revision_hash():
+    """
+    Returns the hash of the git hash of the git repo.
+
+    Args:
+    """
     return subprocess.check_output(['git', 'rev-parse', 'HEAD']).strip()
 
 
@@ -377,6 +412,13 @@ def is_notebook():
 
 
 def format_integer(number, group_size=3):
+    """
+    Format a number.
+
+    Args:
+        number: (int): write your description
+        group_size: (int): write your description
+    """
     assert group_size > 0
 
     number = str(number)
@@ -391,6 +433,11 @@ def format_integer(number, group_size=3):
 
 
 def print_num_params():
+    """
+    Print num_num_num variables.
+
+    Args:
+    """
     num_params = sum([np.prod(v.shape.as_list(), dtype=int) for v in tf.trainable_variables()])
     num_params = format_integer(num_params)
     print('Number of trainable parameters: {}'.format(num_params))
@@ -438,6 +485,12 @@ def get_session(tfdbg=False):
 
 
 def set_gpu(gpu_num):
+    """
+    Sets the current environment.
+
+    Args:
+        gpu_num: (int): write your description
+    """
     os.environ['CUDA_VISIBLE_DEVICES'] = gpu_num
 
 

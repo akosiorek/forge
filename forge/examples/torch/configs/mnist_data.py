@@ -35,6 +35,13 @@ flags.DEFINE_string('data_folder', 'data/MNIST_data', 'Path to data folder.')
 
 
 def load(config, **unused_kwargs):
+    """
+    Loads a dataset.
+
+    Args:
+        config: (dict): write your description
+        unused_kwargs: (dict): write your description
+    """
     del unused_kwargs
 
     if not os.path.exists(config.data_folder):

@@ -34,10 +34,22 @@ class _FlagValues(object):
     """Global container and accessor for flags and their values."""
 
     def __init__(self):
+        """
+        Initialize the object.
+
+        Args:
+            self: (todo): write your description
+        """
         self.__dict__['__flags'] = {}
         self.__dict__['__parsed'] = False
 
     def _parse_flags(self, args=None):
+        """
+        Parse the command line
+
+        Args:
+            self: (todo): write your description
+        """
         result, unparsed = _global_parser.parse_known_args(args=args)
         for flag_name, val in vars(result).items():
             self.__dict__['__flags'][flag_name] = val
@@ -101,6 +113,12 @@ def DEFINE_boolean(flag_name, default_value, docstring):
 
     # Register a custom function for 'bool' so --flag=True works.
     def str2bool(v):
+        """
+        Convert a boolean value to a boolean.
+
+        Args:
+            v: (str): write your description
+        """
         return v.lower() in ('true', 't', '1')
 
     _global_parser.add_argument('--' + flag_name,

@@ -32,6 +32,13 @@ flags.DEFINE_integer('n_hidden', 128, 'Number of hidden units.')
 
 
 def load(config, **inputs):
+    """
+    Load the model.
+
+    Args:
+        config: (dict): write your description
+        inputs: (str): write your description
+    """
 
     imgs, labels = inputs['train_img'], inputs['train_label']
 

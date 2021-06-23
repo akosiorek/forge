@@ -313,6 +313,12 @@ def _restore_flags(flags):
     _flags.FLAGS.__dict__['__parsed'] = True
 
 
+def update(flags_dict):
+    """Add new flags specified by flags_dict."""
+    for k, v in flags_dict.items():
+        _flags.FLAGS.__setattr__(k, v)
+
+
 def print_flags():
     """Pretty-prints config flags."""
     flags = _flags.FLAGS.__flags
